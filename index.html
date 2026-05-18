@@ -238,4 +238,121 @@
             {/* PANTALLA 3: MODO TEST INTERACTIVO */}
             {mode === "test" && (
               <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #1e1e
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #1e1e32", paddingBottom: "12px" }}>
+                  <button style={s.backBtn} onClick={() => setMode("select_mode")}>← Salir</button>
+                  <div style={{ fontSize: "14px", color: "#aaa" }}>
+                    Aciertos: <span style={{ color: "#10b981", fontWeight: "bold" }}>{score.correct}</span> | Fallos: <span style={{ color: "#ef4444", fontWeight: "bold" }}>{score.wrong}</span>
+                  </div>
+                </div>
+
+                {!testFinished ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                    <div style={{ fontSize: "12px", color: carnet.color, fontWeight: "bold" }}>PREGUNTA {currentQIndex + 1} DE {questions.length}</div>
+                    <h2 style={{ fontSize: "18px", color: "#fff", fontWeight: "600", lineHeight: "1.4" }}>{questions[currentQIndex]?.q}</h2>
+                    
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: "10px" }}>
+                      {questions[currentQIndex]?.options.map((opt, idx) => {
+                        let currentBg = "#131322";
+                        let currentBorder = "#1e1e32";
+                        if (isAnswered) {
+                          if (idx === questions[currentQIndex].correct) {
+                            currentBg = "rgba(16, 185, 129, 0.15)";
+                            currentBorder = "#10b981";
+                          } else if (idx === selectedAnswer) {
+                            currentBg = "rgba(239, 68, 68, 0.15)";
+                            currentBorder = "#ef4444";
+                          }
+                        }
+                        return (
+                          <div key={idx} className="opt-card" style={{ background: currentBg, borderColor: currentBorder }} onClick={() => handleOptionClick(idx)}>
+                            <div style={{ width: "24px", height: "24px", borderRadius: "50%", border: "1px solid #444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "bold", background: selectedAnswer === idx ? carnet.color : "transparent" }}>
+                              {String.fromCharCode(65 + idx)}
+                            </div>
+                            <div style={{ flex: 1 }}>{opt}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {isAnswered && (
+                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "10px" }}>
+                        <button style={s.btnNext} onClick={handleNextQuestion}>
+                          {currentQIndex + 1 === questions.length ? "Ver Resultados" : "Siguiente Pregunta →"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "30px 10px", display: "flex", flexDirection: "column", gap: 16 }}>
+                    <div style={{ fontSize: "50px" }}>🎉</div>
+                    <h2 style={s.title}>¡Examen Finalizado!</h2>
+                    <p style={s.subtitle}>Has completado todas las preguntas del test teórico.</p>
+                    <div style={{ background: "#131322", padding: "20px", borderRadius: "16px", border: "1px solid #1e1e32", display: "flex", justifyContent: "space-around", margin: "10px 0" }}>
+                      <div>
+                        <div style={{ fontSize: "24px", fontWeight: "bold", color: "#10b981" }}>{score.correct}</div>
+                        <div style={{ fontSize: "12px", color: "#8e8e9f" }}>Correctas</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "24px", fontWeight: "bold", color: score.wrong > carnet.fallos ? "#ef4444" : "#10b981" }}>{score.wrong}</div>
+                        <div style={{ fontSize: "12px", color: "#8e8e9f" }}>Fallos (Máx. {carnet.fallos})</div>
+                      </div>
+                    </div>
+                    <h3 style={{ fontSize: "18px", color: score.wrong > carnet.fallos ? "#ef4444" : "#10b981", fontWeight: "bold" }}>
+                      {score.wrong > carnet.fallos ? "❌ NO APTO (Superas los fallos permitidos)" : "✅ ¡APTO! Buen trabajo"}
+                    </h3>
+                    <div style={{ marginTop: "10px" }}>
+                      <button style={{ ...s.btnNext, background: carnet.color }} onClick={startTestMode}>Repetir Examen</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* PANTALLA 4: MODO CHAT DE TUTORÍA */}
+            {mode === "chat" && (
+              <div className="fade-up" style={s.chatContainer}>
+                <div style={s.topBar}>
+                  <button style={s.backBtn} onClick={() => setMode("select_mode")}>←</button>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Tutor IA: {carnet.label}</div>
+                    <div style={{ fontSize: 12, color: carnet.color, fontWeight: 500 }}>En línea • Modo Tutoría activo</div>
+                  </div>
+                </div>
+
+                <div style={s.messagesArea}>
+                  {messages.map((m, i) => (
+                    <div key={i} style={{ ...s.msgRow, justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+                      <div style={{ ...s.bubble, background: m.role === "user" ? carnet.color : "#1e1e32", color: m.role === "user" ? "#fff" : "#ddd", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px" }}>
+                        {m.content.split("\n").map((l, j) => <span key={j}>{l}{j < m.content.split("\n").length - 1 && <br />}</span>)}
+                      </div>
+                    </div>
+                  ))}
+                  {loading && (
+                    <div style={{ alignSelf: "flex-start" }}>
+                      <div style={{ ...s.bubble, background: "#1e1e32", color: "#888" }}>● ● ●</div>
+                    </div>
+                  )}
+                  <div ref={msgEndRef} />
+                </div>
+                
+                <div style={s.chatInputWrap}>
+                  <input style={s.chatInput} placeholder="Escribe tu pregunta…"
+                    value={input} onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") sendChat(); }}
+                    disabled={loading} />
+                  <button style={{ ...s.sendBtn, background: loading ? "#333" : carnet.color }} onClick={sendChat} disabled={loading}>
+                    {loading ? "…" : "↑"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
