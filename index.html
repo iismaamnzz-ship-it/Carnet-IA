@@ -16,11 +16,11 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0d0d18; color: #e8e8f0; font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
     @keyframes fadeUp { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
-    @keyframes spin { to { transform:rotate(360deg) } }
     .fade-up { animation: fadeUp 0.4s ease both; }
     .ccard:hover { transform:translateY(-4px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
     .mcard:hover { transform: translateX(4px); background: #1a1a30 !important; }
-    .tcard:hover { transform: translateY(-2px); }
+    .opt-card { background: #131322; border: 1px solid #1e1e32; borderRadius: 12px; padding: 14px 16px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px; font-size: 14px; }
+    .opt-card:hover { background: #1a1a30; border-color: #3b82f6; }
     input::placeholder { color: #555; }
   </style>
 </head>
@@ -32,14 +32,27 @@
     const { useState, useEffect, useRef } = React;
 
     const CARNETS = [
-      { id: "b",       label: "Coche B",     emoji: "🚗", color: "#f59e0b", desc: "Permiso tipo B · El más común",     preguntas: 30, fallos: 3 },
-      { id: "a",       label: "Moto A/A2",   emoji: "🏍️", color: "#ef4444", desc: "Permiso tipo A · Dos ruedas",       preguntas: 30, fallos: 3 },
-      { id: "c",       label: "Camión C",    emoji: "🚛", color: "#3b82f6", desc: "Permiso tipo C · Transporte",        preguntas: 30, fallos: 3 },
-      { id: "d",       label: "Autobús D",   emoji: "🚌", color: "#8b5cf6", desc: "Permiso tipo D · Pasajeros",         preguntas: 30, fallos: 3 },
-      { id: "nautica", label: "Náutica PNB", emoji: "⛵", color: "#06b6d4", desc: "PNB · Patrón de navegación básica",  preguntas: 30, fallos: 3 },
-      { id: "piloto",  label: "Piloto PPL",  emoji: "✈️", color: "#10b981", desc: "Licencia piloto privado",            preguntas: 30, fallos: 3 },
-      { id: "caza",    label: "Caza",        emoji: "🏹", color: "#ec4899", desc: "Licencia de caza e ingeniería",       preguntas: 30, fallos: 3 }
+      { id: "b",       label: "Coche B",     emoji: "🚗", color: "#f59e0b", desc: "Permiso tipo B · El más común",     preguntas: 3, fallos: 3 },
+      { id: "a",       label: "Moto A/A2",   emoji: "🏍️", color: "#ef4444", desc: "Permiso tipo A · Dos ruedas",       preguntas: 3, fallos: 3 },
+      { id: "c",       label: "Camión C",    emoji: "🚛", color: "#3b82f6", desc: "Permiso tipo C · Transporte",        preguntas: 3, fallos: 3 },
+      { id: "d",       label: "Autobús D",   emoji: "🚌", color: "#8b5cf6", desc: "Permiso tipo D · Pasajeros",         preguntas: 3, fallos: 3 },
+      { id: "nautica", label: "Náutica PNB", emoji: "⛵", color: "#06b6d4", desc: "PNB · Patrón de navegación básica",  preguntas: 3, fallos: 3 },
+      { id: "piloto",  label: "Piloto PPL",  emoji: "✈️", color: "#10b981", desc: "Licencia piloto privado",            preguntas: 3, fallos: 3 },
+      { id: "caza",    label: "Caza",        emoji: "🏹", color: "#ec4899", desc: "Licencia de caza e ingeniería",       preguntas: 3, fallos: 3 }
     ];
+
+    // BANCO DE PREGUNTAS DE EJEMPLO
+    const PREGUNTAS_MOCK = {
+      b: [
+        { q: "¿Cuál es la velocidad máxima permitida para un turismo en una autopista?", options: ["90 km/h", "100 km/h", "120 km/h"], correct: 2 },
+        { q: "Si la tasa de alcohol en sangre es superior a la permitida...", options: ["Solo te multan si causas un accidente.", "Está prohibido conducir.", "Puedes conducir con precaución."], correct: 1 },
+        { q: "¿Qué indica una señal de peligro con un triángulo y un ciervo en el centro?", options: ["Paso obligatorio de animales domésticos.", "Peligro por la proximidad de un lugar donde pueden cruzar animales sueltos.", "Zona de caza habilitada."], correct: 1 }
+      ],
+      a: [
+        { q: "¿Es obligatorio el uso del casco para el conductor de una motocicleta?", options: ["No, si circula por ciudad.", "Sí, siempre, en cualquier tipo de vía.", "Solo si lleva pasajero."], correct: 1 },
+        { q: "El uso de guantes protectores en moto...", options: ["Es obligatorio solo en invierno.", "Es altamente recomendable para evitar lesiones.", "Está prohibido."], correct: 1 }
+      ]
+    };
 
     const s = {
       app: { display: "flex", flexDirection: "column", minHeight: "100vh", background: "#0d0d18" },
@@ -64,10 +77,9 @@
       chatInputWrap: { padding: 14, borderTop: "1px solid #1e1e32", background: "#0d0d18", display: "flex", gap: 10, alignItems: "center" },
       chatInput: { flex: 1, background: "#131322", border: "1px solid #1e1e32", borderRadius: 12, padding: "14px 16px", color: "#fff", fontSize: 14, outline: "none", fontFamily: "inherit" },
       sendBtn: { border: "none", color: "#fff", width: 46, height: 46, borderRadius: 12, fontSize: 18, fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-      
-      // ESTILOS NUEVOS EXTRAÍDOS DE TU ORIGINAL PARA LA PANTALLA DE MODOS
       modeOption: { background: "#131322", border: "1px solid #1e1e32", borderRadius: 16, padding: "20px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer", transition: "all 0.2s ease" },
-      modeIcon: { width: 44, height: 44, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }
+      modeIcon: { width: 44, height: 44, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 },
+      btnNext: { background: "#3b82f6", border: "none", color: "#fff", padding: "12px 24px", borderRadius: 10, fontWeight: "bold", cursor: "pointer", fontSize: 14, transition: "all 0.2s" }
     };
 
     function App() {
@@ -78,11 +90,18 @@
       const [loading, setLoading] = useState(false);
       const msgEndRef = useRef(null);
 
+      // ESTADOS NUEVOS DEL MODO TEST INTERACTIVO
+      const [questions, setQuestions] = useState([]);
+      const [currentQIndex, setCurrentQIndex] = useState(0);
+      const [selectedAnswer, setSelectedAnswer] = useState(null);
+      const [isAnswered, setIsAnswered] = useState(false);
+      const [score, setScore] = useState({ correct: 0, wrong: 0 });
+      const [testFinished, setTestFinished] = useState(false);
+
       useEffect(() => {
         if (msgEndRef.current) msgEndRef.current.scrollIntoView({ behavior: "smooth" });
       }, [messages]);
 
-      // Al pulsar un carnet, se abre la pantalla de selección de modos (como en tu original)
       const handleCarnetSelect = (selectedCarnet) => {
         setCarnet(selectedCarnet);
         setMode("select_mode");
@@ -95,9 +114,37 @@
         ]);
       };
 
+      // INICIALIZA LAS PREGUNTAS DEL TEST DEL CARNET SELECCIONADO
       const startTestMode = () => {
+        const list = PREGUNTAS_MOCK[carnet.id] || PREGUNTAS_MOCK["b"]; // Por defecto carga coche si no hay específicas
+        setQuestions(list);
+        setCurrentQIndex(0);
+        setSelectedAnswer(null);
+        setIsAnswered(false);
+        setScore({ correct: 0, wrong: 0 });
+        setTestFinished(false);
         setMode("test");
-        // Aquí puedes añadir la lógica de test más adelante si lo deseas
+      };
+
+      const handleOptionClick = (index) => {
+        if (isAnswered) return;
+        setSelectedAnswer(index);
+        setIsAnswered(true);
+        if (index === questions[currentQIndex].correct) {
+          setScore(prev => ({ ...prev, correct: prev.correct + 1 }));
+        } else {
+          setScore(prev => ({ ...prev, wrong: prev.wrong + 1 }));
+        }
+      };
+
+      const handleNextQuestion = () => {
+        if (currentQIndex + 1 < questions.length) {
+          setCurrentQIndex(prev => prev.currentQIndex + 1);
+          setSelectedAnswer(null);
+          setIsAnswered(false);
+        } else {
+          setTestFinished(true);
+        }
       };
 
       const sendChat = async () => {
@@ -162,7 +209,7 @@
               </div>
             )}
 
-            {/* PANTALLA 2: SELECCIÓN DE MODOS INTERMEDIOS (¡LO QUE FALTABA!) */}
+            {/* PANTALLA 2: SELECCIÓN DE MODOS INTERMEDIOS */}
             {mode === "select_mode" && (
               <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -191,15 +238,76 @@
               </div>
             )}
 
-            {/* PANTALLA 3: MODO TEST (RESERVA DE ESPACIO) */}
+            {/* PANTALLA 3: ¡MODO TEST INTERACTIVO REAL! */}
             {mode === "test" && (
-              <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: 20, textAlign: "center", padding: "40px 20px" }}>
-                <div style={{ fontSize: 48 }}>📝</div>
-                <h2 style={s.title}>Modo Test: {carnet.label}</h2>
-                <p style={s.subtitle}>La carga de preguntas del examen está lista. ¡Mucha suerte!</p>
-                <div style={{ marginTop: 20 }}>
-                  <button style={{ ...s.backBtn, background: "#1e1e32", padding: "10px 20px", borderRadius: 10 }} onClick={() => setMode("select_mode")}>← Volver atrás</button>
+              <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #1e1e32", paddingBottom: "12px" }}>
+                  <button style={s.backBtn} onClick={() => setMode("select_mode")}>← Salir</button>
+                  <div style={{ fontSize: "14px", color: "#aaa" }}>
+                    Aciertos: <span style={{ color: "#10b981", fontWeight: "bold" }}>{score.correct}</span> | Fallos: <span style={{ color: "#ef4444", fontWeight: "bold" }}>{score.wrong}</span>
+                  </div>
                 </div>
+
+                {!testFinished ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                    <div style={{ fontSize: "12px", color: carnet.color, fontWeight: "bold" }}>PREGUNTA {currentQIndex + 1} DE {questions.length}</div>
+                    <h2 style={{ fontSize: "18px", color: "#fff", fontWeight: "600", lineHeight: "1.4" }}>{questions[currentQIndex]?.q}</h2>
+                    
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: "10px" }}>
+                      {questions[currentQIndex]?.options.map((opt, idx) => {
+                        let currentBg = "#131322";
+                        let currentBorder = "#1e1e32";
+                        if (isAnswered) {
+                          if (idx === questions[currentQIndex].correct) {
+                            currentBg = "rgba(16, 185, 129, 0.15)";
+                            currentBorder = "#10b981";
+                          } else if (idx === selectedAnswer) {
+                            currentBg = "rgba(239, 68, 68, 0.15)";
+                            currentBorder = "#ef4444";
+                          }
+                        }
+                        return (
+                          <div key={idx} className="opt-card" style={{ background: currentBg, borderColor: currentBorder }} onClick={() => handleOptionClick(idx)}>
+                            <div style={{ width: "24px", height: "24px", borderRadius: "50%", border: "1px solid #444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "bold", background: selectedAnswer === idx ? carnet.color : "transparent" }}>
+                              {String.fromCharCode(65 + idx)}
+                            </div>
+                            <div style={{ flex: 1 }}>{opt}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {isAnswered && (
+                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "10px" }}>
+                        <button style={s.btnNext} onClick={handleNextQuestion}>
+                          {currentQIndex + 1 === questions.length ? "Ver Resultados" : "Siguiente Pregunta →"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "30px 10px", display: "flex", flexDirection: "column", gap: 16 }}>
+                    <div style={{ fontSize: "50px" }}>🎉</div>
+                    <h2 style={s.title}>¡Examen Finalizado!</h2>
+                    <p style={s.subtitle}>Has completado todas las preguntas del test teórico.</p>
+                    <div style={{ background: "#131322", padding: "20px", borderRadius: "16px", border: "1px solid #1e1e32", display: "flex", justifyContent: "space-around", margin: "10px 0" }}>
+                      <div>
+                        <div style={{ fontSize: "24px", fontWeight: "bold", color: "#10b981" }}>{score.correct}</div>
+                        <div style={{ fontSize: "12px", color: "#8e8e9f" }}>Correctas</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "24px", fontWeight: "bold", color: score.wrong > carnet.fallos ? "#ef4444" : "#10b981" }}>{score.wrong}</div>
+                        <div style={{ fontSize: "12px", color: "#8e8e9f" }}>Fallos (Máx. {carnet.fallos})</div>
+                      </div>
+                    </div>
+                    <h3 style={{ fontSize: "18px", color: score.wrong > carnet.fallos ? "#ef4444" : "#10b981", fontWeight: "bold" }}>
+                      {score.wrong > carnet.fallos ? "❌ NO APTO (Superas los fallos permitidos)" : "✅ ¡APTO! Buen trabajo"}
+                    </h3>
+                    <div style={{ marginTop: "10px" }}>
+                      <button style={{ ...s.btnNext, background: carnet.color }} onClick={startTestMode}>Repetir Examen</button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -216,38 +324,4 @@
 
                 <div style={s.messagesArea}>
                   {messages.map((m, i) => (
-                    <div key={i} style={{ ...s.msgRow, justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
-                      <div style={{ ...s.bubble, background: m.role === "user" ? carnet.color : "#1e1e32", color: m.role === "user" ? "#fff" : "#ddd", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px" }}>
-                        {m.content.split("\n").map((l, j) => <span key={j}>{l}{j < m.content.split("\n").length - 1 && <br />}</span>)}
-                      </div>
-                    </div>
-                  ))}
-                  {loading && (
-                    <div style={{ alignSelf: "flex-start" }}>
-                      <div style={{ ...s.bubble, background: "#1e1e32", color: "#888" }}>● ● ●</div>
-                    </div>
-                  )}
-                  <div ref={msgEndRef} />
-                </div>
-                
-                <div style={s.chatInputWrap}>
-                  <input style={s.chatInput} placeholder="Escribe tu pregunta…"
-                    value={input} onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") sendChat(); }}
-                    disabled={loading} />
-                  <button style={{ ...s.sendBtn, background: loading ? "#333" : carnet.color }} onClick={sendChat} disabled={loading}>
-                    {loading ? "…" : "↑"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </main>
-        </div>
-      );
-    }
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
-</body>
-</html>
+                    <div key={i} style={{ ...s.msgRow, justifyContent: m.role =
