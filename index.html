@@ -14,8 +14,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0d0d18; color: #e8e8f0; font-family: 'DM Sans', sans-serif; }
-    @keyframes fadeUp { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }\n    @keyframes spin { to { transform:rotate(360deg) } }\n    .fade-up { animation: fadeUp 0.4s ease both; }\n    .ccard:hover { transform:translateY(-4px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }\n    .mcard:hover { transform: translateX(4px); }\n    .tcard:hover { transform: translateY(-2px); }\n    input::placeholder { color: #555; }\n  </style>
+    body { background: #0d0d18; color: #e8e8f0; font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
+    @keyframes spin { to { transform:rotate(360deg) } }
+    .fade-up { animation: fadeUp 0.4s ease both; }
+    .ccard:hover { transform:translateY(-4px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    .mcard:hover { transform: translateX(4px); background: #1a1a30 !important; }
+    .tcard:hover { transform: translateY(-2px); }
+    input::placeholder { color: #555; }
+  </style>
 </head>
 <body>
 
@@ -57,13 +64,15 @@
       chatInputWrap: { padding: 14, borderTop: "1px solid #1e1e32", background: "#0d0d18", display: "flex", gap: 10, alignItems: "center" },
       chatInput: { flex: 1, background: "#131322", border: "1px solid #1e1e32", borderRadius: 12, padding: "14px 16px", color: "#fff", fontSize: 14, outline: "none", fontFamily: "inherit" },
       sendBtn: { border: "none", color: "#fff", width: 46, height: 46, borderRadius: 12, fontSize: 18, fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-      btnPri: { border: "none", color: "#fff", borderRadius: 12, padding: "13px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "'Syne', sans-serif" },
-      btnSec: { background: "#1e1e32", border: "1px solid #2e2e4e", color: "#ccc", borderRadius: 12, padding: "13px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer" }
+      
+      // ESTILOS NUEVOS EXTRAÍDOS DE TU ORIGINAL PARA LA PANTALLA DE MODOS
+      modeOption: { background: "#131322", border: "1px solid #1e1e32", borderRadius: 16, padding: "20px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer", transition: "all 0.2s ease" },
+      modeIcon: { width: 44, height: 44, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }
     };
 
     function App() {
       const [carnet, setCarnet] = useState(null);
-      const [mode, setMode] = useState(null); // "test" | "chat"
+      const [mode, setMode] = useState(null); // null | "select_mode" | "test" | "chat"
       const [messages, setMessages] = useState([]);
       const [input, setInput] = useState("");
       const [loading, setLoading] = useState(false);
@@ -73,12 +82,22 @@
         if (msgEndRef.current) msgEndRef.current.scrollIntoView({ behavior: "smooth" });
       }, [messages]);
 
-      const startChat = (selectedCarnet) => {
+      // Al pulsar un carnet, se abre la pantalla de selección de modos (como en tu original)
+      const handleCarnetSelect = (selectedCarnet) => {
         setCarnet(selectedCarnet);
+        setMode("select_mode");
+      };
+
+      const startChatMode = () => {
         setMode("chat");
         setMessages([
-          { role: "assistant", content: `¡Hola! Soy tu tutor de IA experto en el permiso de **${selectedCarnet.label}**. 🚗💨\n\nPregúntame cualquier duda sobre el temario, normas, señales o trucos para el examen teórico. ¿Por dónde empezamos?` }
+          { role: "assistant", content: `¡Hola! Soy tu tutor de IA experto en el permiso de **${carnet.label}**. 🚗💨\n\nPregúntame cualquier duda sobre el temario, normas, señales o trucos para el examen teórico. ¿Por dónde empezamos?` }
         ]);
+      };
+
+      const startTestMode = () => {
+        setMode("test");
+        // Aquí puedes añadir la lógica de test más adelante si lo deseas
       };
 
       const sendChat = async () => {
@@ -92,7 +111,7 @@
           const res = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
             headers: {
-              "x-api-key": "ANTHROPIC_API_KEY", // Vercel usará tu variable de entorno si tu backend está configurado, o puedes cambiarlo.
+              "x-api-key": "ANTHROPIC_API_KEY", 
               "anthropic-version": "2023-06-01",
               "content-type": "application/json",
               "dangerouslyAllowBrowser": "true"
@@ -121,7 +140,8 @@
           </header>
 
           <main style={s.main}>
-            {!mode ? (
+            {/* PANTALLA 1: LISTA DE CATEGORÍAS */}
+            {!mode && (
               <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                 <div>
                   <h1 style={s.title}>¿Qué teórico vas a preparar hoy?</h1>
@@ -129,7 +149,7 @@
                 </div>
                 <div style={s.grid}>
                   {CARNETS.map(c => (
-                    <div key={c.id} className="ccard" style={s.card} onClick={() => startChat(c)}>
+                    <div key={c.id} className="ccard" style={s.card} onClick={() => handleCarnetSelect(c)}>
                       <div style={{ ...s.iconWrap, background: `${c.color}20`, color: c.color }}>{c.emoji}</div>
                       <div style={s.cardContent}>
                         <div style={s.cardTitle}>{c.label}</div>
@@ -140,13 +160,57 @@
                   ))}
                 </div>
               </div>
-            ) : (
+            )}
+
+            {/* PANTALLA 2: SELECCIÓN DE MODOS INTERMEDIOS (¡LO QUE FALTABA!) */}
+            {mode === "select_mode" && (
+              <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <button style={s.backBtn} onClick={() => { setMode(null); setCarnet(null); }}>← Volver</button>
+                </div>
+                <div>
+                  <h1 style={s.title}>{carnet.emoji} {carnet.label}</h1>
+                  <p style={s.subtitle}>Selecciona el modo de preparación que deseas utilizar.</p>
+                </div>
+                <div style={s.grid}>
+                  <div className="mcard" style={s.modeOption} onClick={startTestMode}>
+                    <div style={{ ...s.modeIcon, background: "rgba(59, 130, 246, 0.1)", color: "#3b82f6" }}>📝</div>
+                    <div style={s.cardContent}>
+                      <div style={s.cardTitle}>Realizar Test Inteligente</div>
+                      <div style={s.cardDesc}>Simula un examen real adaptado con control de errores.</div>
+                    </div>
+                  </div>
+                  <div className="mcard" style={s.modeOption} onClick={startChatMode}>
+                    <div style={{ ...s.modeIcon, background: "rgba(16, 185, 129, 0.1)", color: "#10b981" }}>💬</div>
+                    <div style={s.cardContent}>
+                      <div style={s.cardTitle}>Chat con Tutor IA</div>
+                      <div style={s.cardDesc}>Resuelve dudas del temario y pide explicaciones detalladas.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* PANTALLA 3: MODO TEST (RESERVA DE ESPACIO) */}
+            {mode === "test" && (
+              <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: 20, textAlign: "center", padding: "40px 20px" }}>
+                <div style={{ fontSize: 48 }}>📝</div>
+                <h2 style={s.title}>Modo Test: {carnet.label}</h2>
+                <p style={s.subtitle}>La carga de preguntas del examen está lista. ¡Mucha suerte!</p>
+                <div style={{ marginTop: 20 }}>
+                  <button style={{ ...s.backBtn, background: "#1e1e32", padding: "10px 20px", borderRadius: 10 }} onClick={() => setMode("select_mode")}>← Volver atrás</button>
+                </div>
+              </div>
+            )}
+
+            {/* PANTALLA 4: MODO CHAT DE TUTORÍA */}
+            {mode === "chat" && (
               <div className="fade-up" style={s.chatContainer}>
                 <div style={s.topBar}>
-                  <button style={s.backBtn} onClick={() => { setMode(null); setCarnet(null); }}>←</button>
+                  <button style={s.backBtn} onClick={() => setMode("select_mode")}>←</button>
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Tutor IA: {carnet.label}</div>
-                    <div style={{ fontSize: 12, color: carnet.color, fontWeight: 500 }}>En línea • Listo para ayudarte</div>
+                    <div style={{ fontSize: 12, color: carnet.color, fontWeight: 500 }}>En línea • Modo Tutoría activo</div>
                   </div>
                 </div>
 
