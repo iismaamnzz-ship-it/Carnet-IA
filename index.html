@@ -8,21 +8,6 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0d0d18; color: #e8e8f0; font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
-    @keyframes fadeUp { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
-    .fade-up { animation: fadeUp 0.4s ease both; }
-    .ccard:hover { transform:translateY(-4px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-    .mcard:hover { transform: translateX(4px); background: #1a1a30 !important; }
-    .opt-card { background: #131322; border: 1px solid #1e1e32; border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px; font-size: 14px; }
-    .opt-card:hover { background: #1a1a30; border-color: #3b82f6; }
-    input::placeholder { color: #555; }
-  </style>
 </head>
 <body>
 
@@ -31,297 +16,417 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
+    // 1. CONFIGURACIÓN DE CARNETS
     const CARNETS = [
-      { id: "b",       label: "Coche B",     emoji: "🚗", color: "#f59e0b", desc: "Permiso tipo B · El más común",     preguntas: 3, fallos: 3 },
-      { id: "a",       label: "Moto A/A2",   emoji: "🏍️", color: "#ef4444", desc: "Permiso tipo A · Dos ruedas",       preguntas: 2, fallos: 3 },
-      { id: "c",       label: "Camión C",    emoji: "🚛", color: "#3b82f6", desc: "Permiso tipo C · Transporte",        preguntas: 3, fallos: 3 },
-      { id: "d",       label: "Autobús D",   emoji: "🚌", color: "#8b5cf6", desc: "Permiso tipo D · Pasajeros",         preguntas: 3, fallos: 3 },
-      { id: "nautica", label: "Náutica PNB", emoji: "⛵", color: "#06b6d4", desc: "PNB · Patrón de navegación básica",  preguntas: 3, fallos: 3 },
-      { id: "piloto",  label: "Piloto PPL",  emoji: "✈️", color: "#10b981", desc: "Licencia piloto privado",            preguntas: 3, fallos: 3 },
-      { id: "caza",    label: "Caza",        emoji: "🏹", color: "#ec4899", desc: "Licencia de caza e ingeniería",       preguntas: 3, fallos: 3 }
+      { id: "b",       label: "Coche B",     emoji: "🚗", color: "#f59e0b", desc: "Permiso tipo B · El más común",     preguntas: 30, fallos: 3 },
+      { id: "a",       label: "Moto A/A2",   emoji: "🏍️", color: "#ef4444", desc: "Permiso tipo A · Dos ruedas",       preguntas: 30, fallos: 3 },
+      { id: "c",       label: "Camión C",    emoji: "🚛", color: "#3b82f6", desc: "Permiso tipo C · Transporte",        preguntas: 30, fallos: 3 },
+      { id: "d",       label: "Autobús D",   emoji: "🚌", color: "#8b5cf6", desc: "Permiso tipo D · Pasajeros",         preguntas: 30, fallos: 3 },
+      { id: "nautica", label: "Náutica PNB", emoji: "⛵", color: "#06b6d4", desc: "PNB · Patrón de navegación básica",  preguntas: 30, fallos: 3 },
+      { id: "piloto",  label: "Piloto PPL",  emoji: "✈️", color: "#10b981", desc: "Licencia piloto privado",            preguntas: 30, fallos: 3 },
+      { id: "caza",    label: "Caza",        emoji: "🏹", color: "#84cc16", desc: "Licencia de caza y pesca",           preguntas: 20, fallos: 4 },
+      { id: "armas",   label: "Armas",       emoji: "🔫", color: "#f97316", desc: "Licencia de armas tipo D/E",         preguntas: 20, fallos: 4 }
     ];
 
-    const PREGUNTAS_MOCK = {
-      b: [
-        { q: "¿Cuál es la velocidad máxima permitida para un turismo en una autopista?", options: ["90 km/h", "100 km/h", "120 km/h"], correct: 2 },
-        { q: "Si la tasa de alcohol en sangre es superior a la permitida...", options: ["Solo te multan si causas un accidente.", "Está prohibido conducir.", "Puedes conducir con precaución."], correct: 1 },
-        { q: "¿Qué indica una señal de peligro con un triángulo y un ciervo en el centro?", options: ["Paso obligatorio de animales domésticos.", "Peligro por la proximidad de un lugar donde pueden cruzar animales sueltos.", "Zona de caza habilitada."], correct: 1 }
-      ],
-      a: [
-        { q: "¿Es obligatorio el uso del casco para el conductor de una motocicleta?", options: ["No, si circula por ciudad.", "Sí, siempre, en cualquier tipo de vía.", "Solo si lleva pasajero."], correct: 1 },
-        { q: "El uso de guantes protectores en moto...", options: ["Es obligatorio solo en invierno.", "Es altamente recomendable para evitar lesiones.", "Está prohibido."], correct: 1 }
-      ]
+    // 2. TEMARIOS POR CATEGORÍA
+    const getTopics = (id) => {
+      const map = {
+        b:       ["Señales de tráfico", "Velocidades máximas", "Prioridad de paso", "Distancias de seguridad", "Alcohol y drogas", "Alumbrado", "Cinturón y SRI"],
+        a:       ["Equipamiento obligatorio", "Curvas y frenada", "Viento lateral", "Señales específicas motos", "Mantenimiento básico"],
+        c:       ["Masas y dimensiones", "Tacógrafo", "Tiempos de conducción", "Transporte de mercancías", "Frenos y ABS"],
+        d:       ["Transporte de viajeros", "Paradas y estaciones", "Emergencias con pasajeros", "Cinturones en autobús"],
+        nautica: ["Luces de navegación", "Reglas de rumbo", "Meteorología marina", "Balizamiento", "Señales de socorro"],
+        piloto:  ["Meteorología aeronáutica", "Navegación VOR/NDB", "Comunicaciones ATC", "Regulaciones EASA", "Emergencias en vuelo"],
+        caza:    ["Épocas de veda", "Especies protegidas", "Seguridad con armas", "Licencias y permisos"],
+        armas:   ["Clasificación de armas", "Almacenamiento seguro", "Trámites administrativos", "Normativa vigente"]
+      };
+      return map[id] || ["Normativa general", "Señales", "Seguridad", "Infracciones", "Primeros auxilios"];
     };
 
-    const s = {
-      app: { display: "flex", flexDirection: "column", minHeight: "100vh", background: "#0d0d18" },
-      header: { padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #1e1e32", background: "rgba(13,13,24,0.8)", backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 10 },
-      logo: { fontSize: 20, fontWeight: 800, fontFamily: "'Syne', sans-serif", background: "linear-gradient(90deg, #fff, #888)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
-      main: { flex: 1, padding: "24px", maxWidth: 800, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 },
-      title: { fontSize: 28, fontWeight: 800, fontFamily: "'Syne', sans-serif", lineHeight: 1.2, color: "#fff" },
-      subtitle: { fontSize: 15, color: "#8e8e9f", fontWeight: 400, marginTop: 4 },
-      grid: { display: "flex", flexDirection: "column", gap: 12 },
-      card: { background: "#131322", border: "1px solid #1e1e32", borderRadius: 16, padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer", transition: "all 0.2s ease" },
-      iconWrap: { width: 48, height: 48, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 },
-      cardContent: { flex: 1 },
-      cardTitle: { fontSize: 16, fontWeight: 700, color: "#fff" },
-      cardDesc: { fontSize: 13, color: "#71718a", marginTop: 2 },
-      badge: { background: "rgba(255,255,255,0.05)", padding: "4px 10px", borderRadius: 20, fontSize: 11, color: "#aaa", fontWeight: 500, border: "1px solid rgba(255,255,255,0.05)" },
-      topBar: { display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid #1e1e32", paddingBottom: 16 },
-      backBtn: { background: "none", border: "none", color: "#fff", fontSize: 20, cursor: "pointer", padding: "4px 8px" },
-      chatContainer: { display: "flex", flexDirection: "column", height: "calc(100vh - 140px)", background: "#131322", border: "1px solid #1e1e32", borderRadius: 20, overflow: "hidden" },
-      messagesArea: { flex: 1, padding: 20, overflowY: "auto", display: "flex", flexDirection: "column", gap: 14 },
-      msgRow: { display: "flex", width: "100%" },
-      bubble: { maxWidth: "80%", padding: "12px 16px", fontSize: 14, lineHeight: 1.5, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" },
-      chatInputWrap: { padding: 14, borderTop: "1px solid #1e1e32", background: "#0d0d18", display: "flex", gap: 10, alignItems: "center" },
-      chatInput: { flex: 1, background: "#131322", border: "1px solid #1e1e32", borderRadius: 12, padding: "14px 16px", color: "#fff", fontSize: 14, outline: "none", fontFamily: "inherit" },
-      sendBtn: { border: "none", color: "#fff", width: 46, height: 46, borderRadius: 12, fontSize: 18, fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-      modeOption: { background: "#131322", border: "1px solid #1e1e32", borderRadius: 16, padding: "20px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer", transition: "all 0.2s ease" },
-      modeIcon: { width: 44, height: 44, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 },
-      btnNext: { background: "#3b82f6", border: "none", color: "#fff", padding: "12px 24px", borderRadius: 10, fontWeight: "bold", cursor: "pointer", fontSize: 14, transition: "all 0.2s" }
-    };
+    // 3. PROMPT DEL SISTEMA DE TU PROYECTO ORIGINAL
+    const SYSTEM_PROMPT = (label, preguntas, fallos) =>
+    `Eres ProfeIA, el mejor tutor español para aprobar el examen de ${label}.
+    Eres cercano, motivador y muy preciso con la normativa española actual.
+    DATOS OFICIALES DEL EXAMEN DE ${label.toUpperCase()}:
+    - Número total de preguntas: ${preguntas}
+    - Fallos máximos permitidos para aprobar: ${fallos}
+
+    REGLAS:
+    - Si te piden un TEST: responde SOLO con JSON válido, sin texto extra, sin markdown, sin backticks:
+    {"preguntas":[{"p":"texto pregunta","ops":["A. opción","B. opción","C. opción"],"ok":0,"exp":"explicación corta"}]}
+    El campo "ok" es el índice 0, 1 o 2 de la respuesta correcta.
+    - Genera EXACTAMENTE el número de preguntas indicado en el mensaje, ni más ni menos.
+    - Si te piden ESTUDIAR: explica con emojis, ejemplos y trucos para memorizar.
+    - Si te preguntan algo: responde directo citando normativa española.`;
 
     function App() {
+      const [screen, setScreen] = useState("home");
       const [carnet, setCarnet] = useState(null);
-      const [mode, setMode] = useState(null); 
-      const [messages, setMessages] = useState([]);
-      const [input, setInput] = useState("");
       const [loading, setLoading] = useState(false);
-      const msgEndRef = useRef(null);
+      const [error, setError] = useState("");
 
       const [questions, setQuestions] = useState([]);
-      const [currentQIndex, setCurrentQIndex] = useState(0);
-      const [selectedAnswer, setSelectedAnswer] = useState(null);
-      const [isAnswered, setIsAnswered] = useState(false);
-      const [score, setScore] = useState({ correct: 0, wrong: 0 });
-      const [testFinished, setTestFinished] = useState(false);
+      const [qIdx, setQIdx] = useState(0);
+      const [answered, setAnswered] = useState(null);
+      const [userAnswers, setUserAnswers] = useState([]);
+      const [finished, setFinished] = useState(false);
+
+      const [topic, setTopic] = useState("");
+      const [studyText, setStudyText] = useState("");
+      const [customTopic, setCustomTopic] = useState("");
+
+      const [msgs, setMsgs] = useState([]);
+      const [input, setInput] = useState("");
+      const chatRef = useRef(null);
 
       useEffect(() => {
-        if (msgEndRef.current) msgEndRef.current.scrollIntoView({ behavior: "smooth" });
-      }, [messages]);
+        if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+      }, [msgs]);
 
-      const handleCarnetSelect = (selectedCarnet) => {
-        setCarnet(selectedCarnet);
-        setMode("select_mode");
+      // FUNCIÓN LLAMADA A LA API DE ANTHROPIC
+      const callAI = async (userMsg, history = []) => {
+        const c = carnet || { label: "conducción", preguntas: 30, fallos: 3 };
+        const messages = history.length ? history : [{ role: "user", content: userMsg }];
+        
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "x-api-key": "TU_ANTHROPIC_API_KEY", // <-- RECUERDA PONER TU CLAVE REAL DE ANTHROPIC AQUÍ
+            "anthropic-version": "2023-06-01",
+            "dangerouslyAllowBrowser": "true"
+          },
+          body: JSON.stringify({
+            model: "claude-3-5-sonnet-20241022",
+            max_tokens: 1500,
+            system: SYSTEM_PROMPT(c.label, c.preguntas, c.fallos),
+            messages
+          })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+        return data.content?.map(b => b.text || "").join("") || "";
       };
 
-      const startChatMode = () => {
-        setMode("chat");
-        setMessages([
-          { role: "assistant", content: `¡Hola! Soy tu tutor de IA experto en el permiso de **${carnet.label}**. 🚗💨\n\nPregúntame cualquier duda sobre el temario, normas, señales o trucos para el examen teórico. ¿Por dónde empezamos?` }
-        ]);
+      const parsePreguntas = (raw) => {
+        const clean = raw.replace(/```json|```/g, "").trim();
+        const start = clean.indexOf("{");
+        const end = clean.lastIndexOf("}") + 1;
+        const parsed = JSON.parse(clean.slice(start, end));
+        return parsed.preguntas || [];
       };
 
-      const startTestMode = () => {
-        const list = PREGUNTAS_MOCK[carnet.id] || PREGUNTAS_MOCK["b"]; 
-        setQuestions(list);
-        setCurrentQIndex(0);
-        setSelectedAnswer(null);
-        setIsAnswered(false);
-        setScore({ correct: 0, wrong: 0 });
-        setTestFinished(false);
-        setMode("test");
-      };
+      // TUS DOS LLAMADAS SIMULTÁNEAS EN PARALELO PARA OBTENER LAS 30 PREGUNTAS TOTALES
+      const startTest = async () => {
+        setScreen("test");
+        setLoading(true);
+        setError("");
+        setQuestions([]);
+        setQIdx(0);
+        setAnswered(null);
+        setUserAnswers([]);
+        setFinished(false);
+        try {
+          const total = carnet.preguntas;
+          const mitad = Math.ceil(total / 2);
+          const resto = total - mitad;
 
-      const handleOptionClick = (index) => {
-        if (isAnswered) return;
-        setSelectedAnswer(index);
-        setIsAnswered(true);
-        if (index === questions[currentQIndex].correct) {
-          setScore(prev => ({ ...prev, correct: prev.correct + 1 }));
-        } else {
-          setScore(prev => ({ ...prev, wrong: prev.wrong + 1 }));
+          const [raw1, raw2] = await Promise.all([
+            callAI(`Genera exactamente ${mitad} preguntas de test para el examen oficial de ${carnet.label} en España. Solo JSON válido.`),
+            callAI(`Genera exactamente ${resto} preguntas de test DIFERENTES para el examen oficial de ${carnet.label} en España. Solo JSON válido.`)
+          ]);
+          const todas = [...parsePreguntas(raw1), ...parsePreguntas(raw2)];
+          if (todas.length === 0) throw new Error("Sin preguntas");
+          setQuestions(todas);
+        } catch (err) {
+          setError("Error generando el test con IA. Revisa tus credenciales o vuelve a pulsar 'Reintentar'.");
         }
+        setLoading(false);
       };
 
-      const handleNextQuestion = () => {
-        if (currentQIndex + 1 < questions.length) {
-          setCurrentQIndex(prev => prev + 1);
-          setSelectedAnswer(null);
-          setIsAnswered(false);
-        } else {
-          setTestFinished(true);
+      const pickAnswer = (i) => {
+        if (answered !== null) return;
+        const correct = questions[qIdx].ok;
+        setAnswered(i);
+        setUserAnswers(prev => [...prev, { chosen: i, correct }]);
+        setTimeout(() => {
+          setAnswered(null);
+          if (qIdx + 1 >= questions.length) setFinished(true);
+          else setQIdx(q => q + 1);
+        }, 2000);
+      };
+
+      const startStudy = async (t) => {
+        setTopic(t);
+        setStudyText("");
+        setScreen("study-content");
+        setLoading(true);
+        try {
+          const txt = await callAI(`Explícame en detalle el tema "${t}" para el examen de ${carnet.label}. Usa emojis, ejemplos y trucos para memorizar.`);
+          setStudyText(txt);
+        } catch {
+          setStudyText("Error cargando el contenido. Vuelve atrás e inténtalo de nuevo.");
         }
+        setLoading(false);
       };
 
       const sendChat = async () => {
-        if (!input.trim() || loading) return;
-        const userText = input.trim();
+        const txt = input.trim();
+        if (!txt || loading) return;
+        const newMsgs = [...msgs, { role: "user", content: txt }];
+        setMsgs(newMsgs);
         setInput("");
-        setMessages(prev => [...prev, { role: "user", content: userText }]);
         setLoading(true);
-
         try {
-          const res = await fetch("https://api.anthropic.com/v1/messages", {
-            method: "POST",
-            headers: {
-              "x-api-key": "ANTHROPIC_API_KEY", 
-              "anthropic-version": "2023-06-01",
-              "content-type": "application/json",
-              "dangerouslyAllowBrowser": "true"
-            },
-            body: JSON.stringify({
-              model: "claude-3-5-sonnet-20241022",
-              max_tokens: 1024,
-              messages: [{ role: "user", content: `Eres un profesor de autoescuela experto para el examen de ${carnet.label}. Responde de forma clara y didáctica: ${userText}` }]
-            })
-          });
-          const data = await res.json();
-          const reply = data.content[0].text;
-          setMessages(prev => [...prev, { role: "assistant", content: reply }]);
-        } catch (err) {
-          setMessages(prev => [...prev, { role: "assistant", content: "Lo siento, ha ocurrido un error al conectar con Claude. Revisa tu API Key de Anthropic." }]);
-        } finally {
-          setLoading(false);
+          const reply = await callAI("", newMsgs);
+          setMsgs([...newMsgs, { role: "assistant", content: reply }]);
+        } catch {
+          setMsgs([...newMsgs, { role: "assistant", content: "❌ Error de conexión. Inténtalo de nuevo." }]);
         }
+        setLoading(false);
       };
 
+      const score = userAnswers.filter(a => a.chosen === a.correct).length;
+      const fallosCount = questions.length - score;
+      const aprobado = carnet && fallosCount <= carnet.fallos;
+      const pct = questions.length ? Math.round((score / questions.length) * 100) : 0;
+      const go = (sc) => setScreen(sc);
+      const goHome = () => { setScreen("home"); setCarnet(null); setMsgs([]); setStudyText(""); setTopic(""); };
+
       return (
-        <div style={s.app}>
-          <header style={s.header}>
-            <div style={s.logo}>CarnetIA</div>
-            <div style={s.badge}>Beta</div>
-          </header>
+        <div style={s.root}>
+          <style>{css}</style>
+
+          <nav style={s.nav}>
+            <div style={s.navLogo} onClick={goHome}>
+              <span style={s.navIcon}>🎓</span>
+              <span style={s.navBrand}>CarnetIA</span>
+            </div>
+            {carnet && (
+              <div style={{ ...s.navBadge, background: carnet.color + "22", border: `1px solid ${carnet.color}55` }}>
+                <span>{carnet.emoji}</span>
+                <span style={{ color: carnet.color, fontWeight: 600, fontSize: 13 }}>{carnet.label}</span>
+              </div>
+            )}
+          </nav>
 
           <main style={s.main}>
-            {/* PANTALLA 1: LISTA DE CATEGORÍAS */}
-            {!mode && (
-              <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                <div>
-                  <h1 style={s.title}>¿Qué teórico vas a preparar hoy?</h1>
-                  <p style={s.subtitle}>Elige tu permiso y aprueba a la primera con tu tutor inteligente.</p>
+            {/* PANTALLA: HOME */}
+            {screen === "home" && (
+              <div className="fade-up">
+                <div style={s.hero}>
+                  <div style={s.heroChip}>✨ Tutor con Inteligencia Artificial</div>
+                  <h1 style={s.heroH1}>Aprueba tu carnet<br /><em style={s.heroEm}>a la primera.</em></h1>
+                  <p style={s.heroP}>Simulacros oficiales, explicaciones personalizadas y un tutor IA 24/7. Elige tu carnet.</p>
                 </div>
-                <div style={s.grid}>
-                  {CARNETS.map(c => (
-                    <div key={c.id} className="ccard" style={s.card} onClick={() => handleCarnetSelect(c)}>
-                      <div style={{ ...s.iconWrap, background: `${c.color}20`, color: c.color }}>{c.emoji}</div>
-                      <div style={s.cardContent}>
-                        <div style={s.cardTitle}>{c.label}</div>
-                        <div style={s.cardDesc}>{c.desc}</div>
+                <div style={s.carnetGrid}>
+                  {CARNETS.map((c, i) => (
+                    <div key={c.id} className="ccard" style={{ ...s.ccard, animationDelay: `${i * 0.06}s`, '--acc': c.color }} onClick={() => { setCarnet(c); go("menu"); }}>
+                      <div style={{ ...s.ccardTop, background: c.color + "18" }}>
+                        <span style={s.ccardEmoji}>{c.emoji}</span>
                       </div>
-                      <div style={s.badge}>{c.preguntas} preg.</div>
+                      <div style={s.ccardBody}>
+                        <div style={{ ...s.ccardLabel, color: c.color }}>{c.label}</div>
+                        <div style={s.ccardDesc}>{c.desc}</div>
+                        <div style={{ ...s.ccardBadge, color: c.color, borderColor: c.color + "55" }}>
+                          {c.preguntas} preguntas · máx. {c.fallos} fallos
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* PANTALLA 2: SELECCIÓN DE MODOS INTERMEDIOS */}
-            {mode === "select_mode" && (
-              <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <button style={s.backBtn} onClick={() => { setMode(null); setCarnet(null); }}>← Volver</button>
-                </div>
-                <div>
-                  <h1 style={s.title}>{carnet.emoji} {carnet.label}</h1>
-                  <p style={s.subtitle}>Selecciona el modo de preparación que deseas utilizar.</p>
-                </div>
-                <div style={s.grid}>
-                  <div className="mcard" style={s.modeOption} onClick={startTestMode}>
-                    <div style={{ ...s.modeIcon, background: "rgba(59, 130, 246, 0.1)", color: "#3b82f6" }}>📝</div>
-                    <div style={s.cardContent}>
-                      <div style={s.cardTitle}>Realizar Test Inteligente</div>
-                      <div style={s.cardDesc}>Simula un examen real adaptado con control de errores.</div>
+            {/* PANTALLA: MENÚ OPCIONES */}
+            {screen === "menu" && carnet && (
+              <div className="fade-up">
+                <button style={s.back} onClick={goHome}>← Cambiar carnet</button>
+                <h2 style={s.sectionH}>¿Cómo quieres estudiar?</h2>
+                <p style={s.sectionSub}>
+                  <strong style={{ color: carnet.color }}>{carnet.label}</strong> · {carnet.preguntas} preguntas · máx. {carnet.fallos} fallos para aprobar
+                </p>
+                <div style={s.menuGrid}>
+                  {[
+                    { emoji: "📝", title: `Simulacro oficial (${carnet.preguntas} preguntas)`, desc: `Igual que el examen real · puedes fallar ${carnet.fallos} como máximo`, action: startTest },
+                    { emoji: "📚", title: "Estudiar por temas", desc: "Aprende cada bloque con ejemplos, trucos y resúmenes visuales", action: () => go("study") },
+                    { emoji: "🤖", title: "Pregunta a la IA", desc: "Resuelve cualquier duda al instante con tu tutor personal", action: () => { setMsgs([]); go("chat"); } }
+                  ].map((m, i) => (
+                    <div key={i} className="mcard" style={{ '--acc': carnet.color, ...s.mcard }} onClick={m.action}>
+                      <div style={{ ...s.mcardIcon, background: carnet.color + "22" }}>{m.emoji}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={s.mcardTitle}>{m.title}</div>
+                        <div style={s.mcardDesc}>{m.desc}</div>
+                      </div>
+                      <div style={{ ...s.mcardArr, color: carnet.color }}>→</div>
                     </div>
-                  </div>
-                  <div className="mcard" style={s.modeOption} onClick={startChatMode}>
-                    <div style={{ ...s.modeIcon, background: "rgba(16, 185, 129, 0.1)", color: "#10b981" }}>💬</div>
-                    <div style={s.cardContent}>
-                      <div style={s.cardTitle}>Chat con Tutor IA</div>
-                      <div style={s.cardDesc}>Resuelve dudas del temario y pide explicaciones detalladas.</div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* PANTALLA 3: MODO TEST INTERACTIVO */}
-            {mode === "test" && (
-              <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #1e1e32", paddingBottom: "12px" }}>
-                  <button style={s.backBtn} onClick={() => setMode("select_mode")}>← Salir</button>
-                  <div style={{ fontSize: "14px", color: "#aaa" }}>
-                    Aciertos: <span style={{ color: "#10b981", fontWeight: "bold" }}>{score.correct}</span> | Fallos: <span style={{ color: "#ef4444", fontWeight: "bold" }}>{score.wrong}</span>
+            {/* PANTALLA: MODO SIMULACRO EXAMEN */}
+            {screen === "test" && (
+              <div className="fade-up">
+                <button style={s.back} onClick={() => go("menu")}>← Volver</button>
+                {loading && !questions.length && (
+                  <div style={s.center}>
+                    <div style={{ ...s.spinner, borderTopColor: carnet.color }} />
+                    <p style={s.loadTxt}>Generando simulacro de {carnet.preguntas} preguntas por IA (Tandas 1 y 2)…</p>
                   </div>
-                </div>
-
-                {!testFinished ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                    <div style={{ fontSize: "12px", color: carnet.color, fontWeight: "bold" }}>PREGUNTA {currentQIndex + 1} DE {questions.length}</div>
-                    <h2 style={{ fontSize: "18px", color: "#fff", fontWeight: "600", lineHeight: "1.4" }}>{questions[currentQIndex]?.q}</h2>
-                    
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: "10px" }}>
-                      {questions[currentQIndex]?.options.map((opt, idx) => {
-                        let currentBg = "#131322";
-                        let currentBorder = "#1e1e32";
-                        if (isAnswered) {
-                          if (idx === questions[currentQIndex].correct) {
-                            currentBg = "rgba(16, 185, 129, 0.15)";
-                            currentBorder = "#10b981";
-                          } else if (idx === selectedAnswer) {
-                            currentBg = "rgba(239, 68, 68, 0.15)";
-                            currentBorder = "#ef4444";
+                )}
+                {error && (
+                  <div style={s.center}>
+                    <p style={{ color: "#ef4444", marginBottom: 16 }}>{error}</p>
+                    <button style={{ ...s.btnPri, background: carnet.color }} onClick={startTest}>Reintentar</button>
+                  </div>
+                )}
+                {!loading && !error && !finished && questions.length > 0 && (
+                  <div>
+                    <div style={s.progressWrap}>
+                      <div style={s.progressTrack}>
+                        <div style={{ ...s.progressFill, width: `${(qIdx / questions.length) * 100}%`, background: carnet.color }} />
+                      </div>
+                      <span style={s.progressLbl}>{qIdx + 1}/{questions.length}</span>
+                    </div>
+                    <div style={s.questionCard} key={qIdx} className="fade-up">
+                      <div style={{ ...s.qNum, color: carnet.color }}>Pregunta {qIdx + 1} de {questions.length}</div>
+                      <p style={s.qText}>{questions[qIdx]?.p}</p>
+                      <div style={s.optList}>
+                        {questions[qIdx]?.ops.map((op, i) => {
+                          const isCorrect = i === questions[qIdx].ok;
+                          const isChosen = i === answered;
+                          let bg = "#1c1c2e", border = "#2e2e4e", col = "#ccc";
+                          if (answered !== null) {
+                            if (isCorrect) { bg = "#052e16"; border = "#22c55e"; col = "#4ade80"; }
+                            else if (isChosen) { bg = "#2d0000"; border = "#ef4444"; col = "#f87171"; }
                           }
-                        }
+                          return (
+                            <button key={i} className="opt-btn" disabled={answered !== null} style={{ ...s.optBtn, background: bg, borderColor: border, color: col }} onClick={() => pickAnswer(i)}>
+                              <span style={{ ...s.optLetter, color: answered !== null && isCorrect ? "#4ade80" : answered !== null && isChosen ? "#f87171" : carnet.color }}>
+                                {["A","B","C"][i]}
+                              </span>
+                              {op.replace(/^[ABC]\.\s*/, "")}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {answered !== null && answered !== questions[qIdx].ok && (
+                        <div style={s.expBox}>💡 {questions[qIdx].exp}</div>
+                      )}
+                      {answered !== null && answered === questions[qIdx].ok && (
+                        <div style={{ ...s.expBox, background: "#052e16", borderColor: "#22c55e33", color: "#4ade80" }}>✅ ¡Correcto!</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {finished && (
+                  <div style={s.resultWrap} className="fade-up">
+                    <div style={s.resultEmoji}>{aprobado ? "🎉" : "💪"}</div>
+                    <h2 style={s.resultH}>{aprobado ? "¡Aprobado!" : "Suspendido — ¡sigue practicando!"}</h2>
+                    <div style={s.scoreWrap}>
+                      <div style={{ ...s.scoreBig, color: carnet.color }}>{score}/{questions.length}</div>
+                      <div style={s.scorePct}>{pct}% de aciertos · {fallosCount} fallos</div>
+                      <div style={{ marginTop: 12, fontSize: 14, fontWeight: 700, color: aprobado ? "#4ade80" : "#f87171" }}>
+                        {aprobado ? `✅ APROBADO (máx. ${carnet.fallos} fallos permitidos)` : `❌ SUSPENDIDO (${fallosCount} fallos, máx. ${carnet.fallos})`}
+                      </div>
+                    </div>
+                    <div style={s.reviewList}>
+                      {questions.map((q, i) => {
+                        const ua = userAnswers[i];
+                        const ok = ua?.chosen === ua?.correct;
                         return (
-                          <div key={idx} className="opt-card" style={{ background: currentBg, borderColor: currentBorder }} onClick={() => handleOptionClick(idx)}>
-                            <div style={{ width: "24px", height: "24px", borderRadius: "50%", border: "1px solid #444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "bold", background: selectedAnswer === idx ? carnet.color : "transparent" }}>
-                              {String.fromCharCode(65 + idx)}
+                          <div key={i} style={{ ...s.reviewItem, borderLeftColor: ok ? "#22c55e" : "#ef4444" }}>
+                            <span style={{ color: ok ? "#22c55e" : "#ef4444", marginRight: 8, flexShrink: 0 }}>{ok ? "✓" : "✗"}</span>
+                            <div>
+                              <div style={{ fontSize: 13, color: "#ccc", marginBottom: 4 }}>{q.p}</div>
+                              {!ok && <div style={{ fontSize: 12, color: "#888" }}>✓ {q.ops[q.ok]} · {q.exp}</div>}
                             </div>
-                            <div style={{ flex: 1 }}>{opt}</div>
                           </div>
                         );
                       })}
                     </div>
-
-                    {isAnswered && (
-                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "10px" }}>
-                        <button style={s.btnNext} onClick={handleNextQuestion}>
-                          {currentQIndex + 1 === questions.length ? "Ver Resultados" : "Siguiente Pregunta →"}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ textAlign: "center", padding: "30px 10px", display: "flex", flexDirection: "column", gap: 16 }}>
-                    <div style={{ fontSize: "50px" }}>🎉</div>
-                    <h2 style={s.title}>¡Examen Finalizado!</h2>
-                    <p style={s.subtitle}>Has completado todas las preguntas del test teórico.</p>
-                    <div style={{ background: "#131322", padding: "20px", borderRadius: "16px", border: "1px solid #1e1e32", display: "flex", justifyContent: "space-around", margin: "10px 0" }}>
-                      <div>
-                        <div style={{ fontSize: "24px", fontWeight: "bold", color: "#10b981" }}>{score.correct}</div>
-                        <div style={{ fontSize: "12px", color: "#8e8e9f" }}>Correctas</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: "24px", fontWeight: "bold", color: score.wrong > carnet.fallos ? "#ef4444" : "#10b981" }}>{score.wrong}</div>
-                        <div style={{ fontSize: "12px", color: "#8e8e9f" }}>Fallos (Máx. {carnet.fallos})</div>
-                      </div>
-                    </div>
-                    <h3 style={{ fontSize: "18px", color: score.wrong > carnet.fallos ? "#ef4444" : "#10b981", fontWeight: "bold" }}>
-                      {score.wrong > carnet.fallos ? "❌ NO APTO (Superas los fallos permitidos)" : "✅ ¡APTO! Buen trabajo"}
-                    </h3>
-                    <div style={{ marginTop: "10px" }}>
-                      <button style={{ ...s.btnNext, background: carnet.color }} onClick={startTestMode}>Repetir Examen</button>
+                    <div style={s.resultBtns}>
+                      <button style={{ ...s.btnPri, background: carnet.color }} onClick={startTest}>Repetir test</button>
+                      <button style={s.btnSec} onClick={() => go("menu")}>Volver al menú</button>
                     </div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* PANTALLA 4: MODO CHAT DE TUTORÍA */}
-            {mode === "chat" && (
-              <div className="fade-up" style={s.chatContainer}>
-                <div style={s.topBar}>
-                  <button style={s.backBtn} onClick={() => setMode("select_mode")}>←</button>
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Tutor IA: {carnet.label}</div>
-                    <div style={{ fontSize: 12, color: carnet.color, fontWeight: 500 }}>En línea • Modo Tutoría activo</div>
-                  </div>
+            {/* PANTALLA: SELECCIÓN TEMARIO */}
+            {screen === "study" && carnet && (
+              <div className="fade-up">
+                <button style={s.back} onClick={() => go("menu")}>← Volver</button>
+                <h2 style={s.sectionH}>Elige un tema</h2>
+                <p style={s.sectionSub}>La IA te explicará todo lo que necesitas saber</p>
+                <div style={s.topicGrid}>
+                  {getTopics(carnet.id).map(t => (
+                    <div key={t} className="tcard" style={{ '--acc': carnet.color, ...s.tcard }} onClick={() => startStudy(t)}>
+                      <span style={{ ...s.tDot, background: carnet.color }} />{t}
+                    </div>
+                  ))}
                 </div>
+                <div style={s.customBox}>
+                  <input style={s.customInput} placeholder="O escribe tu propio tema…" value={customTopic} onChange={e => setCustomTopic(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && customTopic.trim()) { startStudy(customTopic.trim()); setCustomTopic(""); } }} />
+                  <button style={{ ...s.btnPri, background: carnet.color, minWidth: 100 }} onClick={() => { if (customTopic.trim()) { startStudy(customTopic.trim()); setCustomTopic(""); } }}>Estudiar →</button>
+                </div>
+              </div>
+            )}
 
-                <div style={s.messagesArea}>
-                  {messages.map((m, i) => (
-                    <div key={i} style={{ ...s.msgRow, justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+            {/* PANTALLA: CONTENIDO EXPLICADO POR LA IA */}
+            {screen === "study-content" && (
+              <div className="fade-up">
+                <button style={s.back} onClick={() => go("study")}>← Volver a temas</button>
+                <h2 style={{ ...s.sectionH, color: carnet.color }}>{topic}</h2>
+                {loading ? (
+                  <div style={s.center}>
+                    <div style={{ ...s.spinner, borderTopColor: carnet.color }} />
+                    <p style={s.loadTxt}>Preparando la explicación…</p>
+                  </div>
+                ) : (
+                  <div style={s.studyContent}>
+                    {studyText.split("\n").map((line, i) => (
+                      <p key={i} style={{ marginBottom: line.trim() ? 12 : 6, color: line.startsWith("#") ? "#fff" : "#c8c8d8", fontWeight: line.startsWith("#") ? 700 : 400, fontSize: line.startsWith("#") ? 18 : 15 }}>
+                        {line.replace(/^#+\s*/, "")}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                {!loading && studyText && (
+                  <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+                    <button style={{ ...s.btnPri, background: carnet.color }} onClick={startTest}>Hacer simulacro</button>
+                    <button style={s.btnSec} onClick={() => go("study")}>Otro tema</button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* PANTALLA: TUTOR CHAT CHATEAR CON LA IA */}
+            {screen === "chat" && carnet && (
+              <div style={s.chatWrap} className="fade-up">
+                <button style={s.back} onClick={() => go("menu")}>← Volver</button>
+                <h2 style={s.sectionH}>Tutor IA · <span style={{ color: carnet.color }}>{carnet.label}</span></h2>
+                <p style={s.sectionSub}>{carnet.preguntas} preguntas · máx. {carnet.fallos} fallos para aprobar</p>
+                <div style={s.chatBox} ref={chatRef}>
+                  {msgs.length === 0 && (
+                    <div style={s.chatEmpty}>
+                      <div style={{ fontSize: 40, marginBottom: 12 }}>🤖</div>
+                      <p style={{ color: "#888", fontSize: 14, lineHeight: 1.6 }}>
+                        ¡Hola! Soy tu tutor para el examen de <strong style={{ color: carnet.color }}>{carnet.label}</strong>.<br />
+                        Son <strong>{carnet.preguntas} preguntas</strong> y puedes fallar <strong>{carnet.fallos}</strong> como máximo.
+                      </p>
+                      <div style={s.suggestions}>
+                        {["¿Cuánto tiempo tengo para el examen?", "Dame un consejo para aprobar", "¿Qué temas entran?"].map(q => (
+                          <button key={q} style={{ ...s.suggBtn, borderColor: carnet.color + "44", color: carnet.color }} onClick={() => setInput(q)}>{q}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {msgs.map((m, i) => (
+                    <div key={i} style={{ ...s.msg, alignSelf: m.role === "user" ? "flex-end" : "flex-start" }}>
                       <div style={{ ...s.bubble, background: m.role === "user" ? carnet.color : "#1e1e32", color: m.role === "user" ? "#fff" : "#ddd", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px" }}>
                         {m.content.split("\n").map((l, j) => <span key={j}>{l}{j < m.content.split("\n").length - 1 && <br />}</span>)}
                       </div>
@@ -332,14 +437,9 @@
                       <div style={{ ...s.bubble, background: "#1e1e32", color: "#888" }}>● ● ●</div>
                     </div>
                   )}
-                  <div ref={msgEndRef} />
                 </div>
-                
                 <div style={s.chatInputWrap}>
-                  <input style={s.chatInput} placeholder="Escribe tu pregunta…"
-                    value={input} onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") sendChat(); }}
-                    disabled={loading} />
+                  <input style={s.chatInput} placeholder="Escribe tu pregunta…" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") sendChat(); }} disabled={loading} />
                   <button style={{ ...s.sendBtn, background: loading ? "#333" : carnet.color }} onClick={sendChat} disabled={loading}>
                     {loading ? "…" : "↑"}
                   </button>
@@ -350,6 +450,96 @@
         </div>
       );
     }
+
+    // 4. DECLARACIÓN DE OBJETOS DE ESTILOS LIMPIOS DE GUIONES PROHIBIDOS
+    const s = {
+      root: { minHeight: "100vh", background: "#0d0d18", fontFamily: "'DM Sans', sans-serif", color: "#e8e8f0" },
+      nav: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: "1px solid #1e1e30", background: "#0d0d18", position: "sticky", top: 0, zIndex: 100 },
+      navLogo: { display: "flex", alignItems: "center", gap: 10, cursor: "pointer" },
+      navIcon: { fontSize: 24 },
+      navBrand: { fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 20, letterSpacing: -0.5 },
+      navBadge: { display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 20 },
+      main: { maxWidth: 760, margin: "0 auto", padding: "32px 20px 80px" },
+      hero: { textAlign: "center", marginBottom: 48 },
+      heroChip: { display: "inline-block", background: "#1e1e38", border: "1px solid #3a3a5c", borderRadius: 20, padding: "6px 16px", fontSize: 13, color: "#a0a0c8", marginBottom: 20 },
+      heroH1: { fontFamily: "'Syne', sans-serif", fontSize: "clamp(32px,7vw,52px)", fontWeight: 800, lineHeight: 1.1, letterSpacing: -1.5, marginBottom: 18 },
+      heroEm: { fontStyle: "italic", background: "linear-gradient(135deg, #f59e0b, #ef4444)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
+      heroP: { color: "#888", fontSize: 16, maxWidth: 500, margin: "0 auto", lineHeight: 1.7 },
+      carnetGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 14 },
+      ccard: { background: "#13131f", border: "1px solid #22223a", borderRadius: 16, overflow: "hidden", cursor: "pointer", display: "flex", flexDirection: "column", transition: "all 0.2s", animation: "fadeUp 0.5s ease both" },
+      ccardTop: { padding: "22px 16px 14px", display: "flex", justifyContent: "center" },
+      ccardEmoji: { fontSize: 36 },
+      ccardBody: { padding: "0 14px 14px" },
+      ccardLabel: { fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, marginBottom: 4 },
+      ccardDesc: { fontSize: 11, color: "#666", lineHeight: 1.4, marginBottom: 8 },
+      ccardBadge: { fontSize: 10, fontWeight: 700, border: "1px solid", borderRadius: 6, padding: "3px 7px", display: "inline-block" },
+      sectionH: { fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 26, marginBottom: 8, letterSpacing: -0.5 },
+      sectionSub: { color: "#888", fontSize: 14, marginBottom: 28 },
+      menuGrid: { display: "flex", flexDirection: "column", gap: 14 },
+      mcard: { display: "flex", alignItems: "center", gap: 16, background: "#13131f", border: "1px solid #22223a", borderRadius: 16, padding: "20px", cursor: "pointer", transition: "all 0.2s" },
+      mcardIcon: { width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 },
+      mcardTitle: { fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, marginBottom: 4 },
+      mcardDesc: { color: "#888", fontSize: 13, lineHeight: 1.5 },
+      mcardArr: { marginLeft: "auto", fontSize: 20, fontWeight: 700, flexShrink: 0 },
+      back: { background: "none", border: "1px solid #2e2e4e", color: "#888", borderRadius: 10, padding: "8px 16px", fontSize: 13, cursor: "pointer", marginBottom: 28, transition: "all 0.2s" },
+      center: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 300, gap: 20 },
+      spinner: { width: 40, height: 40, border: "3px solid #2a2a3e", borderTop: "3px solid", borderRadius: "50%", animation: "spin 0.8s linear infinite" },
+      loadTxt: { color: "#888", fontSize: 14 },
+      progressWrap: { display: "flex", alignItems: "center", gap: 14, marginBottom: 28 },
+      progressTrack: { flex: 1, height: 6, background: "#1e1e32", borderRadius: 3, overflow: "hidden" },
+      progressFill: { height: "100%", borderRadius: 3, transition: "width 0.4s ease" },
+      progressLbl: { color: "#888", fontSize: 13, flexShrink: 0 },
+      questionCard: { background: "#13131f", border: "1px solid #22223a", borderRadius: 20, padding: 28 },
+      qNum: { fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14, fontFamily: "'Syne', sans-serif" },
+      qText: { fontSize: 18, fontWeight: 500, lineHeight: 1.6, marginBottom: 28, color: "#f0f0ff" },
+      optList: { display: "flex", flexDirection: "column", gap: 10 },
+      optBtn: { display: "flex", alignItems: "center", gap: 14, border: "1px solid", borderRadius: 12, padding: "14px 18px", fontSize: 14, textAlign: "left", cursor: "pointer", transition: "all 0.15s", lineHeight: 1.4 },
+      optLetter: { fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 15, width: 24, flexShrink: 0 },
+      expBox: { marginTop: 18, background: "#1a0a00", border: "1px solid #78350f55", borderRadius: 12, padding: "12px 16px", fontSize: 13, color: "#fbbf24", lineHeight: 1.5 },
+      resultWrap: { textAlign: "center" },
+      resultEmoji: { fontSize: 64, marginBottom: 16 },
+      resultH: { fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 26, marginBottom: 20 },
+      scoreWrap: { margin: "0 auto 32px", display: "inline-block" },
+      scoreBig: { fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 64, lineHeight: 1 },
+      scorePct: { color: "#888", fontSize: 15, marginTop: 4 },
+      reviewList: { display: "flex", flexDirection: "column", gap: 10, textAlign: "left", marginBottom: 28 },
+      reviewItem: { display: "flex", background: "#13131f", borderLeft: "3px solid", borderRadius: "0 12px 12px 0", padding: "12px 16px" },
+      resultBtns: { display: "flex", gap: 12, justifyContent: "center" },
+      topicGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10, marginBottom: 24 },
+      tcard: { display: "flex", alignItems: "center", gap: 12, background: "#13131f", border: "1px solid #22223a", borderRadius: 12, padding: "14px 16px", cursor: "pointer", fontSize: 14, transition: "all 0.2s" },
+      tDot: { width: 8, height: 8, borderRadius: "50%", flexShrink: 0 },
+      customBox: { display: "flex", gap: 12, marginTop: 8 },
+      customInput: { flex: 1, background: "#13131f", border: "1px solid #2e2e4e", borderRadius: 12, padding: "12px 16px", fontSize: 14, color: "#e8e8f0", outline: "none" },
+      studyContent: { background: "#13131f", border: "1px solid #22223a", borderRadius: 20, padding: 28, lineHeight: 1.8 },
+      chatWrap: { display: "flex", flexDirection: "column", height: "calc(100vh - 200px)" },
+      chatBox: { flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, padding: "8px 0 16px" },
+      chatEmpty: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 40 },
+      suggestions: { display: "flex", flexDirection: "column", gap: 8, marginTop: 20, width: "100%", maxWidth: 360 },
+      suggBtn: { background: "none", border: "1px solid", borderRadius: 10, padding: "10px 16px", fontSize: 13, cursor: "pointer", textAlign: "left" },
+      msg: { display: "flex", maxWidth: "80%" },
+      bubble: { padding: "12px 16px", borderRadius: 18, fontSize: 14, lineHeight: 1.6, maxWidth: "100%" },
+      chatInputWrap: { display: "flex", gap: 10, paddingTop: 16, borderTop: "1px solid #1e1e30" },
+      chatInput: { flex: 1, background: "#13131f", border: "1px solid #2e2e4e", borderRadius: 14, padding: "13px 18px", fontSize: 14, color: "#e8e8f0", outline: "none" },
+      sendBtn: { width: 48, height: 48, borderRadius: 14, border: "none", color: "#fff", fontSize: 20, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
+      btnPri: { border: "none", color: "#fff", borderRadius: 12, padding: "13px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "'Syne', sans-serif" },
+      btnSec: { background: "#1e1e32", border: "1px solid #2e2e4e", color: "#ccc", borderRadius: 12, padding: "13px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer" }
+    };
+
+    // 5. ESTILOS CSS GENERALES
+    const css = `
+      @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      @keyframes fadeUp { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
+      @keyframes spin { to { transform:rotate(360deg) } }
+      .fade-up { animation: fadeUp 0.4s ease both; }
+      .ccard:hover { transform:translateY(-4px); border-color: var(--acc) !important; box-shadow: 0 8px 32px color-mix(in srgb, var(--acc) 25%, transparent); }
+      .mcard:hover { border-color: var(--acc) !important; background: color-mix(in srgb, var(--acc) 5%, #13131f) !important; transform: translateX(4px); }
+      .tcard:hover { border-color: var(--acc) !important; background: color-mix(in srgb, var(--acc) 8%, #13131f) !important; }
+      .opt-btn:not(:disabled):hover { transform: scale(1.01); }
+      ::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #2e2e4e; border-radius: 2px; }
+    `;
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
